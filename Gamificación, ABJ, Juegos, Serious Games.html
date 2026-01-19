@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academia de Juegos y Aprendizaje | Quiz Arcade</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-violet: #8A2BE2;
+            --dark-violet: #4B0082;
+            --bg-office: #F0F2F5;
+            --text-dark: #2c3e50;
+            --arcade-green: #2ecc71;
+            --arcade-red: #e74c3c;
+            --retro-yellow: #f1c40f;
+            --paper-color: #fff;
+        }
+
+        * { box-sizing: border-box; user-select: none; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-office);
+            color: var(--text-dark);
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* --- FUENTES Y TEXTO --- */
+        h1, h2, h3, .arcade-font {
+            font-family: 'Press Start 2P', cursive;
+            text-transform: uppercase;
+            line-height: 1.4;
+        }
+
+        /* --- HEADER --- */
+        header {
+            background: linear-gradient(90deg, var(--dark-violet), var(--primary-violet));
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            border-bottom: 4px solid var(--retro-yellow);
+        }
+        
+        .logo span { color: var(--retro-yellow); }
+
+        .user-controls { display: flex; gap: 1rem; align-items: center; }
+        
+        input[type="text"] {
+            padding: 0.5rem;
+            border: 2px solid white;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            font-family: 'Roboto', sans-serif;
+            border-radius: 4px;
+        }
+
+        button {
+            background-color: var(--retro-yellow);
+            color: var(--dark-violet);
+            border: none;
+            padding: 0.5rem 1rem;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 0.7rem;
+            cursor: pointer;
+            box-shadow: 3px 3px 0px #000;
+            transition: transform 0.1s;
+        }
+        button:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0px #000; }
+        button:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0px #000; }
+
+        /* --- DASHBOARD --- */
+        #dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .game-card {
+            background: var(--paper-color);
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-card::before {
+            content: '';
+            position: absolute; top:0; left:0; width:100%; height:5px;
+            background: var(--primary-violet);
+        }
+
+        .game-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+        }
+
+        .card-icon { font-size: 3rem; margin-bottom: 1rem; }
+        .card-tag { 
+            font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; 
+            background: #eee; padding: 4px 8px; border-radius: 4px; display: inline-block; margin-bottom: 1rem;
+        }
+
+        /* --- GAME AREA (MODAL) --- */
+        #game-area {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .game-window {
+            background: var(--paper-color);
+            width: 90%;
+            max-width: 800px;
+            border-radius: 12px;
+            border: 4px solid var(--primary-violet);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(138, 43, 226, 0.5);
+            max-height: 90vh;
+        }
+
+        .game-header {
+            background: var(--dark-violet);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .game-body {
+            padding: 2rem;
+            overflow-y: auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #fafafa;
+        }
+
+        /* --- QUIZ ELEMENTS --- */
+        .progress-container {
+            width: 100%;
+            height: 10px;
+            background: #ddd;
+            margin-bottom: 2rem;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            background: var(--primary-violet);
+            width: 100%;
+            transition: width 1s linear;
+        }
+
+        .question-box {
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 2rem;
+            color: var(--dark-violet);
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            width: 100%;
+        }
+
+        @media (max-width: 600px) {
+            .options-grid { grid-template-columns: 1fr; }
+        }
+
+        .option-btn {
+            background: white;
+            border: 2px solid #ddd;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s;
+            font-family: 'Roboto', sans-serif;
+            font-weight: 500;
+            position: relative;
+        }
+
+        .option-btn:hover {
+            border-color: var(--primary-violet);
+            background: #f8f0ff;
+            transform: scale(1.02);
+        }
+
+        .option-btn.correct { background: var(--arcade-green); color: white; border-color: #27ae60; }
+        .option-btn.wrong { background: var(--arcade-red); color: white; border-color: #c0392b; }
+
+        /* --- RANKING --- */
+        #ranking-board {
+            position: fixed;
+            top: 80px; right: 20px;
+            width: 300px;
+            background: white;
+            border: 4px solid var(--retro-yellow);
+            padding: 1rem;
+            z-index: 2000;
+            box-shadow: 5px 5px 0px #000;
+            display: none;
+        }
+        #ranking-list { list-style: none; padding: 0; margin: 0; }
+        #ranking-list li {
+            display: flex; justify-content: space-between;
+            padding: 8px 0; border-bottom: 1px dashed #ccc;
+            font-size: 0.9rem;
+        }
+
+        .hidden { display: none !important; }
+        .result-screen { text-align: center; width: 100%; }
+        .result-score { font-size: 3rem; color: var(--primary-violet); margin: 1rem 0; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">
+        <h1 class="arcade-font" style="font-size:1.2rem;">FP<span style="color:var(--retro-yellow)">GAMER</span> QUIZ</h1>
+    </div>
+    <div class="user-controls">
+        <input type="text" id="username" placeholder="Tu Nombre..." maxlength="15">
+        <button onclick="toggleRanking()">🏆 RANKING</button>
+    </div>
+</header>
+
+<aside id="ranking-board">
+    <h3 class="arcade-font" style="font-size:0.8rem; text-align:center; margin-bottom:10px;">TOP ESTUDIANTES</h3>
+    <ul id="ranking-list"></ul>
+    <button onclick="toggleRanking()" style="width:100%; margin-top:10px; background:#ddd; color:#333;">CERRAR</button>
+</aside>
+
+<main id="dashboard">
+    <!-- GAME 1: JUEGOS -->
+    <div class="game-card" onclick="gameManager.openGame('juegos')">
+        <div>
+            <span class="card-tag">Categoría 1</span>
+            <span class="card-icon">🎮</span>
+            <h2>Juegos</h2>
+            <p>La actividad lúdica pura. Entendiendo el juego como entretenimiento sin intención educativa explícita.</p>
+        </div>
+        <button>JUGAR AHORA</button>
+    </div>
+
+    <!-- GAME 2: ABJ -->
+    <div class="game-card" onclick="gameManager.openGame('abj')">
+        <div>
+            <span class="card-tag">Categoría 2</span>
+            <span class="card-icon">🎓</span>
+            <h2>ABJ</h2>
+            <p>Aprendizaje Basado en Juegos. Uso de juegos existentes con un diseño instruccional intencional.</p>
+        </div>
+        <button>JUGAR AHORA</button>
+    </div>
+
+    <!-- GAME 3: GAMIFICACIÓN -->
+    <div class="game-card" onclick="gameManager.openGame('gamificacion')">
+        <div>
+            <span class="card-tag">Categoría 3</span>
+            <span class="card-icon">📊</span>
+            <h2>Gamificación</h2>
+            <p>Aplicar mecánicas de juego en contextos no lúdicos. Transformar el proceso de aprendizaje.</p>
+        </div>
+        <button>JUGAR AHORA</button>
+    </div>
+
+    <!-- GAME 4: SERIOUS GAMES -->
+    <div class="game-card" onclick="gameManager.openGame('serious')">
+        <div>
+            <span class="card-tag">Categoría 4</span>
+            <span class="card-icon">🛠️</span>
+            <h2>Serious Games</h2>
+            <p>Juegos diseñados desde cero para educar. Donde jugar y aprender son inseparables.</p>
+        </div>
+        <button>JUGAR AHORA</button>
+    </div>
+</main>
+
+<!-- GAME AREA -->
+<section id="game-area">
+    <div class="game-window">
+        <div class="game-header">
+            <h2 id="game-title" class="arcade-font" style="font-size:1rem;">TÍTULO</h2>
+            <div style="font-family:'Press Start 2P'; font-size:0.8rem;" id="timer-display">⏱️ 15</div>
+        </div>
+        
+        <div class="game-body" id="game-body">
+            <!-- Quiz content injected here -->
+        </div>
+
+        <div style="background:#eee; padding:10px; text-align:center; border-top:1px solid #ddd;">
+            <button onclick="gameManager.closeGame()" style="background:#e74c3c; color:white;">SALIR</button>
+        </div>
+    </div>
+</section>
+
+<script>
+/**
+ * BANCO DE PREGUNTAS
+ * Basado estrictamente en el contenido proporcionado por el usuario.
+ */
+const questionBank = {
+    juegos: [
+        {
+            q: "¿Cuál es el objetivo principal de un juego puro?",
+            options: ["La educación curricular", "El entretenimiento y diversión", "La simulación de realidad", "El análisis de datos"],
+            a: 1
+        },
+        {
+            q: "En el contexto de 'Juegos', ¿qué tipo de aprendizaje se genera?",
+            options: ["Aprendizaje explícito", "Aprendizaje colateral o incidental", "Ningún tipo de aprendizaje", "Aprendizaje certificable"],
+            a: 1
+        },
+        {
+            q: "¿Cuál es un ejemplo correcto de actividad de 'Juego'?",
+            options: ["Usar Minecraft para diseñar ciudades sostenibles", "Jugar a Minecraft en modo libre sin guía", "Usar Dixit para trabajar la inferencia", "Jugar a un simulador de economía"],
+            a: 1
+        },
+        {
+            q: "¿Nace un juego comercial con intención educativa explícita?",
+            options: ["Sí, siempre", "No, su nacimiento es lúdico", "Solo si es para niños", "Depende del precio"],
+            a: 1
+        }
+    ],
+    abj: [
+        {
+            q: "En el ABJ, ¿el juego ya existe previamente o se crea para la ocasión?",
+            options: ["Se crea desde cero", "El juego ya existe y se reutiliza", "Nunca se usan juegos comerciales", "Se modifica el código fuente"],
+            a: 1
+        },
+        {
+            q: "¿Cuál es el rol esencial del docente en el ABJ?",
+            options: ["Solo observa", "Diseñador didáctico con intencionalidad", "Jugador competitivo", "Juez arbitral"],
+            a: 1
+        },
+        {
+            q: "¿Es el ABJ una metodología educativa completa por sí misma?",
+            options: ["Sí, metodología única", "No, es una seudometodología o técnica que apoya otras (PBL, Flipped)", "Solo funciona en infantil", "Está obsoleta"],
+            a: 1
+        },
+        {
+            q: "¿Cuál es un ejemplo correcto de ABJ?",
+            options: ["Jugar al Ajedrez sin más", "Usar Dixit para trabajar la inferencia y expresión oral", "Usar puntos para controlar asistencia", "Crear un juego desde cero"],
+            a: 1
+        }
+    ],
+    gamificacion: [
+        {
+            q: "En Gamificación, ¿estamos 'jugando' a un videojuego?",
+            options: ["Sí, siempre", "No, se introducen elementos de juego, pero no se juega al juego", "A veces sí, a veces no", "Solo en educación física"],
+            a: 1
+        },
+        {
+            q: "¿Qué elementos son típicos en Gamificación?",
+            options: ["Exámenes sorpresa", "Puntos, niveles, insignias y narrativa", "Silencio absoluto", "Libros de texto estáticos"],
+            a: 1
+        },
+        {
+            q: "En el ejemplo de Jero García con Ratchet & Clank para Inglés...",
+            options: ["Los alumnos juegan al videojuego completo en clase", "Se usa la narrativa para estructurar el aprendizaje, sin jugar", "No hay relación con el videojuego", "Es un Serious Game"],
+            a: 1
+        },
+        {
+            q: "¿Dónde ocurre el aprendizaje en la Gamificación?",
+            options: ["Dentro del videojuego", "En la experiencia diseñada como un juego (no es un juego real)", "En el libro de texto", "En el examen final"],
+            a: 1
+        }
+    ],
+    serious: [
+        {
+            q: "¿Cómo se diseñan los Serious Games?",
+            options: ["Copiando juegos existentes", "Desde su origen con finalidad educativa o social", "Solo para marketing", "Sin lógica pedagógica"],
+            a: 1
+        },
+        {
+            q: "¿Diferencia principal entre Serious Games y ABJ?",
+            options: ["No hay diferencia", "El Serious Game se reutiliza, el ABJ no", "El ABJ usa juegos existentes; el Serious Game se crea para educar", "El Serious Game es solo digital"],
+            a: 2
+        },
+        {
+            q: "¿Qué ejemplo es un Serious Game?",
+            options: ["Jugar al SimCity por diversion", "Interland, para aprender ciberseguridad", "Usar puzzles de lógica en clase", "Una partida de fútbol"],
+            a: 1
+        },
+        {
+            q: "En los Serious Games, ¿cómo es la relación entre jugar y aprender?",
+            options: ["Son cosas separadas", "Jugar y aprender son inseparables desde el diseño", "Primero juegas, luego estudias", "No importa el juego"],
+            a: 1
+        }
+    ]
+};
+
+/**
+ * SISTEMA DE AUDIO SINTETIZADO (Retro)
+ */
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+const playSound = (type) => {
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    
+    if(type === 'click') {
+        osc.type='square'; osc.frequency.value=400; gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+        osc.start(); osc.stop(audioCtx.currentTime+0.05);
+    } else if (type === 'correct') {
+        osc.type='sine'; osc.frequency.setValueAtTime(600, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime+0.1);
+        gain.gain.value=0.1; osc.start(); osc.stop(audioCtx.currentTime+0.2);
+    } else if (type === 'wrong') {
+        osc.type='sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime); osc.frequency.linearRampToValueAtTime(50, audioCtx.currentTime+0.3);
+        gain.gain.value=0.1; osc.start(); osc.stop(audioCtx.currentTime+0.3);
+    }
+};
+
+/**
+ * CLASE MOTOR DE QUIZ
+ */
+class QuizEngine {
+    constructor(category, user) {
+        this.category = category;
+        this.user = user;
+        this.questions = [...questionBank[category]]; // Copia
+        this.currentIdx = 0;
+        this.score = 0;
+        this.maxTime = 15; // Segundos por pregunta
+        this.timer = null;
+        this.timeLeft = 0;
+    }
+
+    start() {
+        this.currentIdx = 0;
+        this.score = 0;
+        this.renderQuestion();
+    }
+
+    renderQuestion() {
+        if(this.currentIdx >= this.questions.length) {
+            this.endGame();
+            return;
+        }
+
+        const q = this.questions[this.currentIdx];
+        const body = document.getElementById('game-body');
+        
+        // Render UI
+        body.innerHTML = `
+            <div class="progress-container"><div id="pbar" class="progress-bar" style="width:100%"></div></div>
+            <div style="color:#666; font-size:0.8rem; margin-bottom:10px;">PREGUNTA ${this.currentIdx + 1} DE 4</div>
+            <div class="question-box">${q.q}</div>
+            <div class="options-grid">
+                ${q.options.map((opt, i) => 
+                    `<div class="option-btn" onclick="currentGameInstance.checkAnswer(${i}, this)">${opt}</div>`
+                ).join('')}
+            </div>
+        `;
+
+        this.startTimer();
+    }
+
+    startTimer() {
+        this.timeLeft = this.maxTime;
+        const timerDisplay = document.getElementById('timer-display');
+        const pBar = document.getElementById('pbar');
+        
+        clearInterval(this.timer);
+        this.timer = setInterval(() => {
+            this.timeLeft -= 0.1;
+            timerDisplay.innerText = `⏱️ ${Math.ceil(this.timeLeft)}`;
+            const pct = (this.timeLeft / this.maxTime) * 100;
+            pBar.style.width = `${pct}%`;
+            
+            if(this.timeLeft <= 0) {
+                clearInterval(this.timer);
+                playSound('wrong');
+                this.handleTimeOut();
+            }
+        }, 100);
+    }
+
+    checkAnswer(selectedIndex, btnElement) {
+        clearInterval(this.timer);
+        const correctIndex = this.questions[this.currentIdx].a;
+        
+        // Deshabilitar clics
+        document.querySelectorAll('.option-btn').forEach(b => b.style.pointerEvents = 'none');
+
+        if(selectedIndex === correctIndex) {
+            playSound('correct');
+            btnElement.classList.add('correct');
+            // Puntos basados en tiempo restante
+            this.score += Math.round(this.timeLeft * 10) + 50;
+        } else {
+            playSound('wrong');
+            btnElement.classList.add('wrong');
+            // Mostrar la correcta
+            document.querySelectorAll('.option-btn')[correctIndex].classList.add('correct');
+            this.score = Math.max(0, this.score - 50);
+        }
+
+        setTimeout(() => {
+            this.currentIdx++;
+            this.renderQuestion();
+        }, 1500);
+    }
+
+    handleTimeOut() {
+        // Resaltar correcta
+        const correctIndex = this.questions[this.currentIdx].a;
+        document.querySelectorAll('.option-btn')[correctIndex].classList.add('correct');
+        document.querySelectorAll('.option-btn').forEach(b => b.style.pointerEvents = 'none');
+        
+        setTimeout(() => {
+            this.currentIdx++;
+            this.renderQuestion();
+        }, 1500);
+    }
+
+    endGame() {
+        const body = document.getElementById('game-body');
+        body.innerHTML = `
+            <div class="result-screen">
+                <h2 class="arcade-font" style="color:var(--primary-violet)">¡EXAMEN FINALIZADO!</h2>
+                <p>Has demostrado tus conocimientos sobre:</p>
+                <h3>${this.category.toUpperCase()}</h3>
+                <div class="result-score arcade-font">${this.score} PTS</div>
+                <p>Resultado guardado en el ranking.</p>
+                <button onclick="gameManager.closeGame()" style="background:var(--primary-violet); color:white; padding:1rem;">VOLVER AL DASHBOARD</button>
+            </div>
+        `;
+        document.getElementById('timer-display').innerText = "";
+        
+        RankingSystem.addScore(this.category, this.user, this.score);
+    }
+}
+
+/**
+ * GESTIÓN DE RANKING
+ */
+const RankingSystem = {
+    scores: JSON.parse(localStorage.getItem('fpGamerScores')) || [],
+    addScore(game, user, score) {
+        if(!user) return;
+        this.scores.push({ game, user, score });
+        this.scores.sort((a,b) => b.score - a.score);
+        this.scores = this.scores.slice(0, 10); // Top 10
+        localStorage.setItem('fpGamerScores', JSON.stringify(this.scores));
+    },
+    render() {
+        const list = document.getElementById('ranking-list');
+        list.innerHTML = this.scores.map(s => 
+            `<li><span>${s.user}</span> <strong>${s.score}</strong></li>`
+        ).join('');
+    }
+};
+
+/**
+ * GESTOR GENERAL
+ */
+const gameManager = {
+    currentGame: null,
+    
+    openGame(type) {
+        const user = document.getElementById('username').value;
+        if(!user) {
+            alert("Por favor, escribe tu nombre primero.");
+            return;
+        }
+        playSound('click');
+        
+        document.getElementById('game-area').style.display = 'flex';
+        document.getElementById('dashboard').style.display = 'none';
+        
+        // Títulos visuales
+        const titles = {
+            'juegos': 'MÓDULO 1: JUEGOS',
+            'abj': 'MÓDULO 2: APRENDIZAJE BASADO EN JUEGOS',
+            'gamificacion': 'MÓDULO 3: GAMIFICACIÓN',
+            'serious': 'MÓDULO 4: SERIOUS GAMES'
+        };
+        document.getElementById('game-title').innerText = titles[type];
+
+        // Colores específicos por categoría para personalizar la barra de progreso
+        const root = document.documentElement;
+        if(type === 'juegos') root.style.setProperty('--primary-violet', '#e74c3c'); // Rojo juego
+        else if(type === 'abj') root.style.setProperty('--primary-violet', '#3498db'); // Azul académico
+        else if(type === 'gamificacion') root.style.setProperty('--primary-violet', '#9b59b6'); // Violeta
+        else root.style.setProperty('--primary-violet', '#2ecc71'); // Verde serio
+
+        currentGameInstance = new QuizEngine(type, user);
+        currentGameInstance.start();
+    },
+
+    closeGame() {
+        playSound('click');
+        document.getElementById('game-area').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'grid';
+        // Restaurar color base
+        document.documentElement.style.setProperty('--primary-violet', '#8A2BE2');
+    }
+};
+
+function toggleRanking() {
+    playSound('click');
+    const b = document.getElementById('ranking-board');
+    b.style.display = b.style.display === 'block' ? 'none' : 'block';
+    if(b.style.display === 'block') RankingSystem.render();
+}
+
+// Inicialización
+RankingSystem.render();
+
+</script>
+</body>
+</html>
